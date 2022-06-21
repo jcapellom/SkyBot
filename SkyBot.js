@@ -9,8 +9,10 @@ const bot = new Telegraf(env.token);
 bot.start(ctx => {
     const from = ctx.update.message.from;
     console.log(from);
-    ctx.reply(`Seja bem-vindo, ${from.first_name}! Utilize o comando /help para obter informações sobre os comandos disponíveis.\nEste bot foi inspirado
-    em @esq_gtt_bot, criado pelo Cap. Ítalo da FAB.`, 'MarkdownV2');
+    /* ctx.reply(`Seja bem-vindo, ${from.first_name}! Utilize o comando /help para obter informações sobre os comandos disponíveis.\n__Este bot foi inspirado
+    em @esq_gtt_bot, criado pelo Cap. Ítalo da FAB.__`, 'MarkdownV2'); */
+    ctx.telegram.sendMessage(ctx.chat.id,`Seja bem-vindo, ${from.first_name}! Utilize o comando /help para obter informações sobre os comandos disponíveis.
+*Este bot foi inspirado em @esq_gtt_bot, desenvolvido pelo Cap. Ítalo da FAB.*`, {parse_mode: 'markdown'})
 });
 
 
