@@ -1,7 +1,7 @@
 const env = require('./.env');
-const redeMetApi = require('./redeMetApi')
+const redeMetApi = require('./redeMetApi');
+const customCommands = require('./customCommands');
 const Telegraf = require('telegraf');
-const axios = require('axios');
 const bot = new Telegraf(env.token);
 
 bot.start(ctx => {
@@ -12,58 +12,39 @@ bot.start(ctx => {
 });
 
 
-bot.command('help', (ctx) => {
+bot.help(ctx => {
     const textHelp = '*/metar* Utilize este comando para obter o METAR das localidades solicitadas, enumerando\\-as com espaço após o comando e separando\\-as com vírgula\\.\n_Ex: /metar sbrj,sbgl,sbjr_\n\
 \n*/taf*'
     ctx.telegram.sendMessage(ctx.chat.id, textHelp, {parse_mode: 'MarkdownV2'});
-
 });
 
-bot.command('metar', (ctx) => {
+bot.command([customCommands.metar, customCommands.notam, customCommands.taf], (ctx) => {
     let text = ctx.update.message.text;
+    let command = text.split(' ')[0].split('/')[1];
     let returnMessage = handleCommandMessage(text);
     if (returnMessage.reply != '') {
         ctx.reply(returnMessage.reply);
         return;
     }
     let requestedLocations = returnMessage.handledLocations;
-    ctx.reply('Buscando METAR para as localidades '+ requestedLocations);
-    let response;
-    try {
-        let request = redeMetApi.metar(requestedLocations);
-        axios
-            .get(request)
-            .then(res => {
-                response = res.data !== undefined ? res.data.data !== undefined ? res.data.data.data : 0 : 0;
-                let foundLocations =[];
-                if (response == 0){
-                    ctx.reply('Não há METAR disponível para nenhuma localidade requisitada.');
-                    return;
-                } 
-                else
-                    response.forEach((item) => {
-                        foundLocations.push(item.id_localidade)
-                        ctx.reply(item.mens)
-                    });
-                let notFoundLocations = arrayDifference(requestedLocations, foundLocations);
-                if (notFoundLocations != 0) ctx.reply(`Não há METAR disponível para ${notFoundLocations}`);
-            })
-        
-    } catch (error) {
-        console.log(error);
+    switch (command.toUpperCase()) {
+        case customCommands.metar.toUpperCase():
+        case customCommands.taf.toUpperCase():
+            ctx.reply(`Buscando ${command.toUpperCase()} para as localidades ${requestedLocations}`);
+            redeMetApi.getMetarOrTaf(command, requestedLocations, '').then(res =>{
+                ctx.reply(res);
+            });
+            break;
+        case customCommands.notam.toUpperCase():
+
+        default:
+            break;
     }
+
 });
-
-bot.command('taf', (ctx) => {
-
-})
 
 function handleLocations(locations){
     return locations !== undefined ? locations.split(',').map(location => location.toUpperCase()) : 0;
-};
-
-function arrayDifference(arr1, arr2){
-    return Array.isArray(arr1) && Array.isArray(arr2) ? arr1.filter(x => !arr2.includes(x)) : 0;
 };
 
 function checkRequestedLocationsPattern(text){
