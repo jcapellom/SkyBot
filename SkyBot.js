@@ -18,8 +18,7 @@ bot.start(ctx => {
  });
 
 
-bot.command([botCommands.commands.metar, botCommands.commands.notam, botCommands.commands.taf, botCommands.commands.sigwx], (ctx) => {
-    let command = extractCommandFromMessage(ctx.update.message.text);
+function executeCommand(command, ctx) {
     switch (command.toUpperCase()) {
         case botCommands.commands.notam.toUpperCase():
         case botCommands.commands.metar.toUpperCase():
@@ -44,12 +43,12 @@ bot.command([botCommands.commands.metar, botCommands.commands.notam, botCommands
         default:
             break;
     }
+}
 
-});
-
-bot.on('message', ctx => {
+bot.on('message', async (ctx, next) => {
+    await next()
     let text = ctx.update.message.text;
-    !isCommand(text) ? replyWithStartText(ctx): 0;
+    isCommand(text) ? executeCommand(isCommand(text), ctx) : replyWithStartText(ctx);
 });
 
 bot.help(ctx => {
@@ -58,11 +57,6 @@ bot.help(ctx => {
 \n*/sigwx*  Utilize este comando para obter a última carta SIGWX baixa disponível \\(SUP/FL250\\)\\.\n_Ex: /sigwx_' 
     ctx.telegram.sendMessage(ctx.chat.id, textHelp, {parse_mode: 'MarkdownV2'});
 });
-
-
-function extractCommandFromMessage(text) {
-    return text.split(' ')[0].split('/')[1];
-}
 
 function handleLocations(locations){
     return locations !== undefined ? locations.split(',').map(location => location.toUpperCase()) : 0;
@@ -88,7 +82,7 @@ function isCommand(text){
         if (Object.hasOwnProperty.call(botCommands.commands, command)) {
             let commandText = botCommands.commands[command];
             let slashCommand = `/${commandText}`
-            if (text == slashCommand) {return commandText};
+            if (text.split(' ')[0] == slashCommand) {return commandText};
         }
     }
     return false;
