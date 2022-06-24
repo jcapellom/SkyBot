@@ -44,8 +44,21 @@ function getMetarOrTaf(metarOrTaf, requestedLocations, finalMessage) {
 function getSigwx(){
     return new Promise((resolve) => {
         let requestUrl = `${baseUrlProdutos}sigwx?api_key=${redeMetApiKey}`;
-        axios.get(requestUrl).then(res => {
-            resolve(res.data);
-        })
+        axios
+            .get(requestUrl)
+            .then(res => {
+                resolve(res.data);
+            })
+            .catch(error => {
+                if (error.response) {
+                    console.log(error.respose.data);
+                    console.log(error.response.status);
+                    console.log(error.response.headers);
+                } else if (error.request) {
+                    console.log(error.request);
+                } else {
+                    console.log ('Erro em /sigwx', error.message);
+                }
+            })
     })
 }
