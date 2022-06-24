@@ -3,6 +3,7 @@ const redeMetApi = require('./redeMetApi');
 const botCommands = require('./botCommands');
 const Telegraf = require('telegraf');
 const bot = new Telegraf(env.token);
+const botLog = new Telegraf(env.tokenLog);
 
 function replyWithStartText(ctx){
     let from = ctx.update.message.from;
@@ -48,7 +49,7 @@ function executeCommand(command, ctx) {
 bot.on('message', async (ctx, next) => {
     await next()
     console.log(ctx.update);
-    ctx.telegram.forwardMessage(env.logBotChatId, ctx.update.message.from.id, ctx.update.message.message_id);
+    botLog.telegram.sendMessage(env.adminChatId, ctx.update.message.text);
     let text = ctx.update.message.text;
     isCommand(text) ? executeCommand(isCommand(text), ctx) : replyWithStartText(ctx);
 });
