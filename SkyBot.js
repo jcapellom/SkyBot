@@ -6,7 +6,7 @@ const bot = new Telegraf(env.token);
 
 function replyWithStartText(ctx){
     let from = ctx.update.message.from;
-    console.log (from);
+    console.log (ctx.update.message);
     ctx.telegram.sendMessage(ctx.chat.id
         , `Seja bem-vindo, ${from.first_name}! Utilize /help para obter informações sobre os comandos disponíveis.
 *Este bot foi inspirado em @esq_gtt_bot, desenvolvido pelo Cap. Ítalo da FAB.*`
@@ -47,6 +47,8 @@ function executeCommand(command, ctx) {
 
 bot.on('message', async (ctx, next) => {
     await next()
+    console.log(ctx.update);
+    ctx.telegram.forwardMessage(env.logBotChatId, ctx.update.message.from.id, ctx.update.message.message_id);
     let text = ctx.update.message.text;
     isCommand(text) ? executeCommand(isCommand(text), ctx) : replyWithStartText(ctx);
 });
