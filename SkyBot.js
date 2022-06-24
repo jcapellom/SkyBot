@@ -1,31 +1,29 @@
 const env = require('./.env');
 const redeMetApi = require('./redeMetApi');
-const customCommands = require('./customCommands');
+const botCommands = require('./botCommands');
 const Telegraf = require('telegraf');
 const bot = new Telegraf(env.token);
 
-bot.start(ctx => {
-    const from = ctx.update.message.from;
+function replyWithStartText(ctx){
+    let from = ctx.update.message.from;
     console.log (from);
-    const textStart = `Seja bem-vindo, ${from.first_name}! Utilize /help para obter informações sobre os comandos disponíveis.
+    ctx.telegram.sendMessage(ctx.chat.id
+        , `Seja bem-vindo, ${from.first_name}! Utilize /help para obter informações sobre os comandos disponíveis.
 *Este bot foi inspirado em @esq_gtt_bot, desenvolvido pelo Cap. Ítalo da FAB.*`
-    ctx.telegram.sendMessage(ctx.chat.id, textStart, {parse_mode: 'markdown'});
-});
+        , {parse_mode: 'markdown'});
+}
+
+bot.start(ctx => {
+    replyWithStartText(ctx);
+ });
 
 
-bot.help(ctx => {
-    const textHelp = '*/metar* Utilize este comando para obter o METAR das localidades solicitadas, enumerando\\-as com espaço após o comando e separando\\-as com vírgula\\.\n_Ex: /metar sbrj,sbgl,sbjr_\n\
-\n*/taf* Utilize este comando para obter o TAF das localidades solicitadas, enumerando\\-as com espaço após o comando e separando\\-as com vírgula\\.\n_Ex: /taf sbrj,sbgl,sbjr_\n\
-\n*/sigwx*  Utilize este comando para obter a última carta SIGWX baixa disponível \\(SUP/FL250\\)\\.\n_Ex: /sigwx_' 
-    ctx.telegram.sendMessage(ctx.chat.id, textHelp, {parse_mode: 'MarkdownV2'});
-});
-
-bot.command([customCommands.metar, customCommands.notam, customCommands.taf, customCommands.sigwx], (ctx) => {
+bot.command([botCommands.commands.metar, botCommands.commands.notam, botCommands.commands.taf, botCommands.commands.sigwx], (ctx) => {
     let command = extractCommandFromMessage(ctx.update.message.text);
     switch (command.toUpperCase()) {
-        case customCommands.notam.toUpperCase():
-        case customCommands.metar.toUpperCase():
-        case customCommands.taf.toUpperCase():
+        case botCommands.commands.notam.toUpperCase():
+        case botCommands.commands.metar.toUpperCase():
+        case botCommands.commands.taf.toUpperCase():
             let returnMessage = handleCommandMessage(ctx.update.message.text);
             let requestedLocations = returnMessage.handledLocations;
             if (returnMessage.reply != '') {
@@ -37,7 +35,7 @@ bot.command([customCommands.metar, customCommands.notam, customCommands.taf, cus
                 ctx.reply(res);
             });
             break;
-        case customCommands.sigwx.toUpperCase():
+        case botCommands.commands.sigwx.toUpperCase():
             ctx.reply(`Buscando ${command.toUpperCase()} mais recente...`);
             redeMetApi.getSigwx().then(res => {
                 console.log(res);
@@ -48,6 +46,19 @@ bot.command([customCommands.metar, customCommands.notam, customCommands.taf, cus
     }
 
 });
+
+bot.on('message', ctx => {
+    let text = ctx.update.message.text;
+    !isCommand(text) ? replyWithStartText(ctx): 0;
+});
+
+bot.help(ctx => {
+    let textHelp = '*/metar* Utilize este comando para obter o METAR das localidades solicitadas, enumerando\\-as com espaço após o comando e separando\\-as com vírgula\\.\n_Ex: /metar sbrj,sbgl,sbjr_\n\
+\n*/taf* Utilize este comando para obter o TAF das localidades solicitadas, enumerando\\-as com espaço após o comando e separando\\-as com vírgula\\.\n_Ex: /taf sbrj,sbgl,sbjr_\n\
+\n*/sigwx*  Utilize este comando para obter a última carta SIGWX baixa disponível \\(SUP/FL250\\)\\.\n_Ex: /sigwx_' 
+    ctx.telegram.sendMessage(ctx.chat.id, textHelp, {parse_mode: 'MarkdownV2'});
+});
+
 
 function extractCommandFromMessage(text) {
     return text.split(' ')[0].split('/')[1];
@@ -71,5 +82,16 @@ function handleCommandMessage(message){
     }
     return {reply: '', handledLocations: handleLocations(textAfterCommand)};
 };
+
+function isCommand(text){
+    for (const command in botCommands.commands) {
+        if (Object.hasOwnProperty.call(botCommands.commands, command)) {
+            let commandText = botCommands.commands[command];
+            let slashCommand = `/${commandText}`
+            if (text == slashCommand) {return commandText};
+        }
+    }
+    return false;
+}
 
 bot.startPolling();
