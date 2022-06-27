@@ -18,6 +18,39 @@ bot.start(ctx => {
     replyWithStartText(ctx);
  });
 
+ bot.on('message', async (ctx, next) => {
+     await next()
+     console.log(ctx.update);
+     let text = ctx.update.message.text;
+     logMessages(ctx.update.message);
+     isCommand(text) ? executeCommand(isCommand(text), ctx) : replyWithStartText(ctx);
+    });
+    
+    bot.help(ctx => {
+        let textHelp = '*/metar* Utilize este comando para obter o METAR das localidades solicitadas, enumerando\\-as com espaço após o comando e separando\\-as com vírgula\\.\n_Ex: /metar sbrj,sbgl,sbjr_\n\
+        \n*/taf* Utilize este comando para obter o TAF das localidades solicitadas, enumerando\\-as com espaço após o comando e separando\\-as com vírgula\\.\n_Ex: /taf sbrj,sbgl,sbjr_\n\
+        \n*/sigwx*  Utilize este comando para obter a última carta SIGWX baixa disponível \\(SUP/FL250\\)\\.\n_Ex: /sigwx_\n\
+        \n*/notam* *EM BREVE*' 
+    ctx.telegram.sendMessage(ctx.chat.id, textHelp, {parse_mode: 'MarkdownV2'});
+});
+
+function logMessages(message) {
+    let senderName = message.from.first_name;
+    let senderLastName = message.from.last_name;
+    let timestamp = new Date(message.date *1000);
+    let formattedTimestamp = timestamp.getDate()  + "-" + (timestamp.getMonth()+1) + "-" + timestamp.getFullYear() + " " +
+    timestamp.getHours() + ":" + timestamp.getMinutes();
+    let loggedMsg = `------------------------------------\n\
+${senderName} ${senderLastName} - ${formattedTimestamp}\n\
+-> ${message.text}\n\
+------------------------------------\n`
+                    
+    botLog.telegram.sendMessage(env.adminChatId, loggedMsg);
+}
+
+function handleLocations(locations){
+    return locations !== undefined ? locations.split(',').map(location => location.toUpperCase()) : 0;
+};
 
 function executeCommand(command, ctx) {
     switch (command.toUpperCase()) {
@@ -45,25 +78,6 @@ function executeCommand(command, ctx) {
             break;
     }
 }
-
-bot.on('message', async (ctx, next) => {
-    await next()
-    console.log(ctx.update);
-    botLog.telegram.sendMessage(env.adminChatId, ctx.update.message.text);
-    let text = ctx.update.message.text;
-    isCommand(text) ? executeCommand(isCommand(text), ctx) : replyWithStartText(ctx);
-});
-
-bot.help(ctx => {
-    let textHelp = '*/metar* Utilize este comando para obter o METAR das localidades solicitadas, enumerando\\-as com espaço após o comando e separando\\-as com vírgula\\.\n_Ex: /metar sbrj,sbgl,sbjr_\n\
-\n*/taf* Utilize este comando para obter o TAF das localidades solicitadas, enumerando\\-as com espaço após o comando e separando\\-as com vírgula\\.\n_Ex: /taf sbrj,sbgl,sbjr_\n\
-\n*/sigwx*  Utilize este comando para obter a última carta SIGWX baixa disponível \\(SUP/FL250\\)\\.\n_Ex: /sigwx_' 
-    ctx.telegram.sendMessage(ctx.chat.id, textHelp, {parse_mode: 'MarkdownV2'});
-});
-
-function handleLocations(locations){
-    return locations !== undefined ? locations.split(',').map(location => location.toUpperCase()) : 0;
-};
 
 function checkRequestedLocationsPattern(text){
     return (/^[a-z]{4}(,[a-z]{4})*$/gi).test(text);
