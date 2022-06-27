@@ -1,30 +1,62 @@
 const env = require('./.env');
 const redeMetApi = require('./redeMetApi');
-const customCommands = require('./customCommands');
+const botCommands = require('./botCommands');
 const Telegraf = require('telegraf');
 const bot = new Telegraf(env.token);
+const botLog = new Telegraf(env.tokenLog);
+
+function replyWithStartText(ctx){
+    let from = ctx.update.message.from;
+    console.log (ctx.update.message);
+    ctx.telegram.sendMessage(ctx.chat.id
+        , `Seja bem-vindo, ${from.first_name}! Utilize /help para obter informações sobre os comandos disponíveis.
+*Este bot foi inspirado em @esq_gtt_bot, desenvolvido pelo Cap. Ítalo da FAB.*`
+        , {parse_mode: 'markdown'});
+}
 
 bot.start(ctx => {
-    const from = ctx.update.message.from;
-    const textStart = `Seja bem-vindo, ${from.first_name}! Utilize /help para obter informações sobre os comandos disponíveis.
-*Este bot foi inspirado em @esq_gtt_bot, desenvolvido pelo Cap. Ítalo da FAB.*`
-    ctx.telegram.sendMessage(ctx.chat.id, textStart, {parse_mode: 'markdown'});
-});
+    replyWithStartText(ctx);
+ });
 
-
-bot.help(ctx => {
-    const textHelp = '*/metar* Utilize este comando para obter o METAR das localidades solicitadas, enumerando\\-as com espaço após o comando e separando\\-as com vírgula\\.\n_Ex: /metar sbrj,sbgl,sbjr_\n\
-\n*/taf* Utilize este comando para obter o TAF das localidades solicitadas, enumerando\\-as com espaço após o comando e separando\\-as com vírgula\\.\n_Ex: /taf sbrj,sbgl,sbjr_\n\
-\n*/sigwx*  Utilize este comando para obter a última carta SIGWX baixa disponível \\(SUP/FL250\\)\\.\n_Ex: /sigwx_' 
+ bot.on('message', async (ctx, next) => {
+     await next()
+     console.log(ctx.update);
+     let text = ctx.update.message.text;
+     logMessages(ctx.update.message);
+     isCommand(text) ? executeCommand(isCommand(text), ctx) : replyWithStartText(ctx);
+    });
+    
+    bot.help(ctx => {
+        let textHelp = '*/metar* Utilize este comando para obter o METAR das localidades solicitadas, enumerando\\-as com espaço após o comando e separando\\-as com vírgula\\.\n_Ex: /metar sbrj,sbgl,sbjr_\n\
+        \n*/taf* Utilize este comando para obter o TAF das localidades solicitadas, enumerando\\-as com espaço após o comando e separando\\-as com vírgula\\.\n_Ex: /taf sbrj,sbgl,sbjr_\n\
+        \n*/sigwx*  Utilize este comando para obter a última carta SIGWX baixa disponível \\(SUP/FL250\\)\\.\n_Ex: /sigwx_\n\
+        \n*/notam* *EM BREVE*' 
     ctx.telegram.sendMessage(ctx.chat.id, textHelp, {parse_mode: 'MarkdownV2'});
 });
 
-bot.command([customCommands.metar, customCommands.notam, customCommands.taf, customCommands.sigwx], (ctx) => {
-    let command = extractCommandFromMessage(ctx.update.message.text);
+function logMessages(message) {
+    let senderName = message.from.first_name;
+    let senderLastName = message.from.last_name;
+    let timestamp = new Date(message.date *1000);
+    let formattedTimestamp = timestamp.getDate()  + "-" + (timestamp.getMonth()+1) + "-" + timestamp.getFullYear() + " " +
+    timestamp.getHours() + ":" + timestamp.getMinutes();
+    let loggedMsg = `------------------------------------\n\
+${senderName} ${senderLastName} - ${formattedTimestamp}\n\
+-> ${message.text}\n\
+------------------------------------\n`
+                    
+    botLog.telegram.sendMessage(env.adminChatId, loggedMsg);
+}
+
+function handleLocations(locations){
+    return locations !== undefined ? locations.split(',').map(location => location.toUpperCase()) : 0;
+};
+
+function executeCommand(command, ctx) {
     switch (command.toUpperCase()) {
-        case customCommands.notam.toUpperCase():
-        case customCommands.metar.toUpperCase():
-        case customCommands.taf.toUpperCase():
+        case botCommands.commands.notam.toUpperCase():
+        case botCommands.commands.metar.toUpperCase():
+        case botCommands.commands.taf.toUpperCase():
             let returnMessage = handleCommandMessage(ctx.update.message.text);
             let requestedLocations = returnMessage.handledLocations;
             if (returnMessage.reply != '') {
@@ -36,7 +68,7 @@ bot.command([customCommands.metar, customCommands.notam, customCommands.taf, cus
                 ctx.reply(res);
             });
             break;
-        case customCommands.sigwx.toUpperCase():
+        case botCommands.commands.sigwx.toUpperCase():
             ctx.reply(`Buscando ${command.toUpperCase()} mais recente...`);
             redeMetApi.getSigwx().then(res => {
                 console.log(res);
@@ -45,16 +77,7 @@ bot.command([customCommands.metar, customCommands.notam, customCommands.taf, cus
         default:
             break;
     }
-
-});
-
-function extractCommandFromMessage(text) {
-    return text.split(' ')[0].split('/')[1];
 }
-
-function handleLocations(locations){
-    return locations !== undefined ? locations.split(',').map(location => location.toUpperCase()) : 0;
-};
 
 function checkRequestedLocationsPattern(text){
     return (/^[a-z]{4}(,[a-z]{4})*$/gi).test(text);
@@ -70,5 +93,16 @@ function handleCommandMessage(message){
     }
     return {reply: '', handledLocations: handleLocations(textAfterCommand)};
 };
+
+function isCommand(text){
+    for (const command in botCommands.commands) {
+        if (Object.hasOwnProperty.call(botCommands.commands, command)) {
+            let commandText = botCommands.commands[command];
+            let slashCommand = `/${commandText}`
+            if (text.split(' ')[0] == slashCommand) {return commandText};
+        }
+    }
+    return false;
+}
 
 bot.startPolling();
