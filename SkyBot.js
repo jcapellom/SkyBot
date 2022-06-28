@@ -6,7 +6,6 @@ const bot = new Telegraf(env.token);
 const botLog = new Telegraf(env.tokenLog);
 const util = require('./util');
 
-
 function replyWithStartText(ctx) {
     let from = ctx.update.message.from;
     console.log(ctx.update.message);
@@ -32,14 +31,17 @@ bot.help(ctx => {
     let textHelp = '*/metar* Utilize este comando para obter o METAR das localidades solicitadas, enumerando\\-as com espaço após o comando e separando\\-as com vírgula\\.\n_Ex: /metar sbrj,sbgl,sbjr_\n\
         \n*/taf* Utilize este comando para obter o TAF das localidades solicitadas, enumerando\\-as com espaço após o comando e separando\\-as com vírgula\\.\n_Ex: /taf sbrj,sbgl,sbjr_\n\
         \n*/sigwx*  Utilize este comando para obter a última carta SIGWX baixa disponível \\(SUP/FL250\\)\\.\n_Ex: /sigwx_\n\
-        \n*/notam* *EM BREVE*'
+        \n*/notam* *EM BREVE*\n\
+        \n*icao1,icao2,icao3\\.\\.\\.* Você pode listar localidades sem comando precedente\\. Isso retornará METAR e TAF das localidades listadas separadas por vírgula e sem espaço\\.\n'
     ctx.telegram.sendMessage(ctx.chat.id, textHelp, { parse_mode: 'MarkdownV2' });
 });
 
 function logMessages(message) {
     let senderName = message.from.first_name;
     let senderLastName = message.from.last_name;
-    let timestamp = util.toISOStringWithTimezone(new Date(message.date * 1000));
+    let timestamp = new Date(message.date * 1000);
+    let formattedTimestamp = timestamp.getDate() + "-" + (timestamp.getMonth() + 1) + "-" + timestamp.getFullYear() + " " +
+        timestamp.getHours() + ":" + timestamp.getMinutes();
     let loggedMsg = `------------------------------------\n\
 ${senderName} ${senderLastName} - ${timestamp}\n\
 -> ${message.text}\n\
@@ -53,12 +55,13 @@ function handleLocations(locations) {
 };
 
 function executeCommand(command, ctx) {
+    var requestedLocations;
     switch (command.toUpperCase()) {
         case botCommands.commands.notam.toUpperCase():
         case botCommands.commands.metar.toUpperCase():
         case botCommands.commands.taf.toUpperCase():
             let returnMessage = handleCommandMessage(ctx.update.message.text);
-            let requestedLocations = returnMessage.handledLocations;
+            requestedLocations = returnMessage.handledLocations;
             if (returnMessage.reply != '') {
                 ctx.reply(returnMessage.reply);
                 return;
@@ -73,6 +76,18 @@ function executeCommand(command, ctx) {
             redeMetApi.getSigwx().then(res => {
                 console.log(res);
                 ctx.replyWithPhoto(res);
+            })
+            break;
+        case botCommands.commands.allInfo.toUpperCase():
+            requestedLocations = ctx.update.message.text
+            ctx.reply(`Buscando informações meteorológicas para as localidades ${requestedLocations}`)
+            let chainedMessage = ''
+            redeMetApi.getMetarOrTaf(botCommands.commands.metar, requestedLocations, chainedMessage).then(res => {
+                chainedMessage = res;
+                redeMetApi.getMetarOrTaf(botCommands.commands.taf, requestedLocations, chainedMessage).then(res => {
+                    chainedMessage = res;
+                    ctx.reply(chainedMessage);
+                })
             })
         default:
             break;
@@ -102,6 +117,7 @@ function isCommand(text) {
             if (text.split(' ')[0] == slashCommand) { return commandText };
         }
     }
+    if (checkRequestedLocationsPattern(text)) {return botCommands.commands.allInfo}
     return false;
 }
 
