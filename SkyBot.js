@@ -1,5 +1,6 @@
 const env = require('./.env');
 const redeMetApi = require('./redeMetApi');
+const util = require('./util');
 const botCommands = require('./botCommands');
 const Telegraf = require('telegraf');
 const bot = new Telegraf(env.token);
@@ -38,11 +39,9 @@ bot.help(ctx => {
 function logMessages(message) {
     let senderName = message.from.first_name;
     let senderLastName = message.from.last_name;
-    let timestamp = new Date(message.date * 1000);
-    let formattedTimestamp = timestamp.getDate() + "-" + (timestamp.getMonth() + 1) + "-" + timestamp.getFullYear() + " " +
-        timestamp.getHours() + ":" + timestamp.getMinutes();
+    let timestamp = util.toISOStringWithTimezone(new Date(message.date * 1000));
     let loggedMsg = `------------------------------------\n\
-${senderName} ${senderLastName} - ${formattedTimestamp}\n\
+${senderName} ${senderLastName} - ${timestamp}\n\
 -> ${message.text}\n\
 ------------------------------------\n`
 
