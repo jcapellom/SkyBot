@@ -52,7 +52,7 @@ function handleLocations(locations) {
     return locations !== undefined ? locations.split(',').map(location => location.toUpperCase()) : 0;
 };
 
-function executeCommand(command, ctx) {
+async function executeCommand(command, ctx) {
     var requestedLocations;
     switch (command.toUpperCase()) {
         case botCommands.commands.notam.toUpperCase():
@@ -61,24 +61,24 @@ function executeCommand(command, ctx) {
             let returnMessage = handleCommandMessage(ctx.update.message.text);
             requestedLocations = returnMessage.handledLocations;
             if (returnMessage.reply != '') {
-                ctx.reply(returnMessage.reply);
+                await ctx.reply(returnMessage.reply);
                 return;
             }
-            ctx.reply(`Buscando ${command.toUpperCase()} para as localidades ${requestedLocations}...`);
+            await ctx.reply(`Buscando ${command.toUpperCase()} para as localidades ${requestedLocations}...`);
             redeMetApi.getMetarOrTaf(command, requestedLocations, '').then(res => {
                 ctx.reply(res);
             });
             break;
         case botCommands.commands.sigwx.toUpperCase():
-            ctx.reply(`Buscando ${command.toUpperCase()} mais recente...`);
+            await ctx.reply(`Buscando ${command.toUpperCase()} mais recente...`);
             redeMetApi.getSigwx().then(res => {
                 console.log(res);
                 ctx.replyWithPhoto(res);
             })
             break;
         case botCommands.commands.allInfo.toUpperCase():
-            requestedLocations = ctx.update.message.text
-            ctx.reply(`Buscando informações meteorológicas para as localidades ${requestedLocations}`)
+            requestedLocations = handleLocations(ctx.update.message.text);
+            await ctx.reply(`Buscando informações meteorológicas para as localidades ${requestedLocations}`)
             let chainedMessage = ''
             redeMetApi.getMetarOrTaf(botCommands.commands.metar, requestedLocations, chainedMessage).then(res => {
                 chainedMessage = res;
