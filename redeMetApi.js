@@ -35,7 +35,7 @@ function getMetarOrTaf(metarOrTaf, requestedLocations, finalMessage) {
                 });
             let notFoundLocations = util.arrayDifference(requestedLocations, foundLocations);
             returnedMessages.forEach(item => finalMessage += (item.msg + '\n\n'));
-            if (notFoundLocations != 0) finalMessage += `Não há ${metarOrTaf.toUpperCase()} disponível para ${notFoundLocations}\n`;
+            if (notFoundLocations != 0) finalMessage += `Não há ${metarOrTaf.toUpperCase()} disponível para ${notFoundLocations}\n\n`;
             resolve(finalMessage);
         });
     });
