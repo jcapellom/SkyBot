@@ -5,7 +5,6 @@ const botCommands = require('./botCommands');
 const Telegraf = require('telegraf');
 const bot = new Telegraf(env.token);
 const botLog = new Telegraf(env.tokenLog);
-const util = require('./util');
 
 function replyWithStartText(ctx) {
     let from = ctx.update.message.from;
