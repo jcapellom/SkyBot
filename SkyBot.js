@@ -5,6 +5,7 @@ const botCommands = require('./botCommands');
 const Telegraf = require('telegraf');
 const bot = new Telegraf(env.token);
 const botLog = new Telegraf(env.tokenLog);
+const errorMsg = require('./errorMsgs');
 
 function replyWithStartText(ctx) {
     let from = ctx.update.message.from;
@@ -74,7 +75,9 @@ async function executeCommand(command, ctx) {
             redeMetApi.getSigwx().then(res => {
                 console.log(res);
                 ctx.replyWithPhoto(res);
-            })
+            }).catch(error => {
+                catchErrors(error, errorMsg.redeMet);
+            });
             break;
         case botCommands.commands.allInfo.toUpperCase():
             requestedLocations = handleLocations(ctx.update.message.text);
@@ -85,12 +88,22 @@ async function executeCommand(command, ctx) {
                 redeMetApi.getMetarOrTaf(botCommands.commands.taf, requestedLocations, chainedMessage).then(res => {
                     chainedMessage = res;
                     ctx.reply(chainedMessage);
-                })
-            })
+                }).catch(error => {
+                    catchErrors(error, errorMsg.redeMet);
+                });
+            }).catch(error => {
+                catchErrors(error, errorMsg.redeMet);
+            });
+
         default:
             break;
     }
 }
+
+function catchErrors(error, msg) {
+    ctx.reply(msg);
+    console.log('ops!', error);
+};
 
 function checkRequestedLocationsPattern(text) {
     return (/^[a-z]{4}(,[a-z]{4})*$/gi).test(text);
@@ -115,8 +128,16 @@ function isCommand(text) {
             if (text.split(' ')[0] == slashCommand) { return commandText };
         }
     }
-    if (checkRequestedLocationsPattern(text)) {return botCommands.commands.allInfo}
+    if (checkRequestedLocationsPattern(text)) { return botCommands.commands.allInfo }
     return false;
 }
 
 bot.startPolling();
+
+bot.catch(error => {
+    console.log('Erro encontrado:', error)
+});
+
+botLog.catch(error => {
+    console.log('Erro encontrado:', error)
+});

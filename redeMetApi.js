@@ -25,7 +25,7 @@ function getMetarOrTaf(metarOrTaf, requestedLocations, finalMessage) {
             let returnedMessages = [];
             let foundLocations = [];
             if (response == 0) {
-                finalMessage += `Não há ${metarOrTaf.toUpperCase()} disponível para nenhuma localidade requisitada.\n`;
+                finalMessage += `Não há ${metarOrTaf.toUpperCase()} disponível para nenhuma localidade requisitada.\n\n`;
                 resolve(finalMessage);
             }
             else
