@@ -8,7 +8,8 @@ module.exports = {
 
     redeMetApiKey,
     getMetarOrTaf,
-    getSigwx
+    getSigwx,
+    getAviso
 
 };
 
@@ -36,6 +37,37 @@ function getMetarOrTaf(metarOrTaf, requestedLocations, finalMessage) {
             let notFoundLocations = util.arrayDifference(requestedLocations, foundLocations);
             returnedMessages.forEach(item => finalMessage += (item.msg + '\n\n'));
             if (notFoundLocations != 0) finalMessage += `Não há ${metarOrTaf.toUpperCase()} disponível para ${notFoundLocations}\n\n`;
+            resolve(finalMessage);
+        });
+    });
+}
+
+function getAviso(requestedLocations, finalMessage) {
+    let endpoint = 'aviso/';
+    let response;
+    let data_ini;
+    let data_fim;
+    let page_tam;
+    return new Promise((resolve) => {
+        let requestUrl = `${baseUrlMensagens}${endpoint}${requestedLocations}?api_key=${redeMetApiKey}`;
+        console.log(requestUrl);
+        axios.get(requestUrl).then(res => {
+            response = res.data !== undefined ? res.data.data !== undefined ? res.data.data.data : 0 : 0;
+            console.log('response getAviso = ' + response);
+            let returnedMessages = [];
+            let foundLocations = [];
+            if (response == 0) {
+                finalMessage += `Não há aviso de aeródromo válido para nenhuma localidade requisitada.\n\n`;
+                resolve(finalMessage);
+            }
+            else
+                response.forEach((item) => {
+                    returnedMessages.push({ location: item.id_localidade, initial: item.validade_inicial, final: item.validade_final, msg: item.mens, received: item.recebimento });
+                    foundLocations.push(item.id_localidade);
+                });
+            let notFoundLocations = util.arrayDifference(requestedLocations, foundLocations);
+            returnedMessages.forEach(item => finalMessage += (item.msg + '\n\n'));
+            if (notFoundLocations != 0) finalMessage += `Não há aviso de aeródromo válido para ${notFoundLocations}\n\n`;
             resolve(finalMessage);
         });
     });
