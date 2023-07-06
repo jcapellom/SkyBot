@@ -87,12 +87,18 @@ async function executeCommand(command, ctx) {
                 chainedMessage = res;
                 redeMetApi.getMetarOrTaf(botCommands.commands.taf, requestedLocations, chainedMessage).then(res => {
                     chainedMessage = res;
-                    ctx.reply(chainedMessage);
+                    redeMetApi.getAviso(requestedLocations, chainedMessage).then(res => {
+                        chainedMessage = res
+                        console.log('retorna getAviso'+res);
+                        ctx.reply(chainedMessage);
+                    }).catch(error => {
+                        catchErrors(error, errorMsg.redeMet, ctx);
+                    });
                 }).catch(error => {
-                    catchErrors(error, errorMsg.redeMet);
+                    catchErrors(error, errorMsg.redeMet, ctx);
                 });
             }).catch(error => {
-                catchErrors(error, errorMsg.redeMet);
+                catchErrors(error, errorMsg.redeMet, ctx);
             });
 
         default:
@@ -100,7 +106,7 @@ async function executeCommand(command, ctx) {
     }
 }
 
-function catchErrors(error, msg) {
+function catchErrors(error, msg, ctx) {
     ctx.reply(msg);
     console.log('ops!', error);
 };
