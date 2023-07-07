@@ -1,20 +1,19 @@
 const redeMetApiKey = 'OM55qUBbwLma4RYXBf1QDYRPkIEyQD99KJ6fs94L';
 const baseUrlMensagens = 'https://api-redemet.decea.mil.br/mensagens/';
 const baseUrlProdutos = 'https://api-redemet.decea.mil.br/produtos/';
-const util = require('./util');
+const botCommands = require('../app/botCommands');
+const util = require('../util');
 const axios = require('axios');
 
 module.exports = {
 
     redeMetApiKey,
-    getMetarOrTaf,
-    getSigwx,
-    getAviso
-
+    getMet,
+    getSigwx
 };
 
-function getMetarOrTaf(metarOrTaf, requestedLocations, finalMessage) {
-    let endpoint = metarOrTaf + '/';
+function getMet(met, requestedLocations, finalMessage) {
+    let endpoint = met + '/';
     let response;
     let data_ini;
     let data_fim;
@@ -26,7 +25,7 @@ function getMetarOrTaf(metarOrTaf, requestedLocations, finalMessage) {
             let returnedMessages = [];
             let foundLocations = [];
             if (response == 0) {
-                finalMessage += `Não há ${metarOrTaf.toUpperCase()} disponível para nenhuma localidade requisitada.\n\n`;
+                finalMessage += `Não há ${botCommands.commands[met].desc} válido para nenhuma localidade requisitada.\n\n`;
                 resolve(finalMessage);
             }
             else
@@ -36,38 +35,7 @@ function getMetarOrTaf(metarOrTaf, requestedLocations, finalMessage) {
                 });
             let notFoundLocations = util.arrayDifference(requestedLocations, foundLocations);
             returnedMessages.forEach(item => finalMessage += (item.msg + '\n\n'));
-            if (notFoundLocations != 0) finalMessage += `Não há ${metarOrTaf.toUpperCase()} disponível para ${notFoundLocations}\n\n`;
-            resolve(finalMessage);
-        });
-    });
-}
-
-function getAviso(requestedLocations, finalMessage) {
-    let endpoint = 'aviso/';
-    let response;
-    let data_ini;
-    let data_fim;
-    let page_tam;
-    return new Promise((resolve) => {
-        let requestUrl = `${baseUrlMensagens}${endpoint}${requestedLocations}?api_key=${redeMetApiKey}`;
-        console.log(requestUrl);
-        axios.get(requestUrl).then(res => {
-            response = res.data !== undefined ? res.data.data !== undefined ? res.data.data.data : 0 : 0;
-            console.log('response getAviso = ' + response);
-            let returnedMessages = [];
-            let foundLocations = [];
-            if (response == 0) {
-                finalMessage += `Não há aviso de aeródromo válido para nenhuma localidade requisitada.\n\n`;
-                resolve(finalMessage);
-            }
-            else
-                response.forEach((item) => {
-                    returnedMessages.push({ location: item.id_localidade, initial: item.validade_inicial, final: item.validade_final, msg: item.mens, received: item.recebimento });
-                    foundLocations.push(item.id_localidade);
-                });
-            let notFoundLocations = util.arrayDifference(requestedLocations, foundLocations);
-            returnedMessages.forEach(item => finalMessage += (item.msg + '\n\n'));
-            if (notFoundLocations != 0) finalMessage += `Não há aviso de aeródromo válido para ${notFoundLocations}\n\n`;
+            if (notFoundLocations != 0) finalMessage += `Não há ${botCommands.commands[met].desc} válido para ${notFoundLocations}\n\n`;
             resolve(finalMessage);
         });
     });

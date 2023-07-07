@@ -1,6 +1,6 @@
 const env = require('./.env');
-const redeMetApi = require('./redeMetApi');
-const util = require('./util');
+const redeMetApi = require('../API/redeMetApi');
+const util = require('../util');
 const botCommands = require('./botCommands');
 const Telegraf = require('telegraf');
 const bot = new Telegraf(env.token);
@@ -29,11 +29,18 @@ bot.on('message', async (ctx, next) => {
 });
 
 bot.help(ctx => {
-    let textHelp = '*/metar* Utilize este comando para obter o METAR das localidades solicitadas, enumerando\\-as com espaço após o comando e separando\\-as com vírgula\\.\n_Ex: /metar sbrj,sbgl,sbjr_\n\
-        \n*/taf* Utilize este comando para obter o TAF das localidades solicitadas, enumerando\\-as com espaço após o comando e separando\\-as com vírgula\\.\n_Ex: /taf sbrj,sbgl,sbjr_\n\
-        \n*/sigwx*  Utilize este comando para obter a última carta SIGWX baixa disponível \\(SUP/FL250\\)\\.\n_Ex: /sigwx_\n\
-        \n*/notam* *EM BREVE*\n\
-        \n*icao1,icao2,icao3\\.\\.\\.* Você pode listar localidades sem comando precedente\\. Isso retornará METAR e TAF das localidades listadas separadas por vírgula e sem espaço\\.\n'
+    let textHelp = ''
+    for (const command in botCommands.commands) {
+        if (Object.hasOwnProperty.call(botCommands.commands, command)) {
+            if (botCommands.commands[command].hint != ''){
+                if (textHelp != ''){
+                    textHelp += '\n'
+                }
+                textHelp += botCommands.commands[command].hint
+            }   
+        }
+    }
+    textHelp += '\n*icao1,icao2,icao3\\.\\.\\.* Você pode listar localidades sem comando precedente\\. Isso retornará METAR e TAF das localidades listadas separadas por vírgula e sem espaço\\.\n'
     ctx.telegram.sendMessage(ctx.chat.id, textHelp, { parse_mode: 'MarkdownV2' });
 });
 
@@ -53,25 +60,41 @@ function handleLocations(locations) {
     return locations !== undefined ? locations.split(',').map(location => location.toUpperCase()) : 0;
 };
 
+async function requestMetData(msg, command, requestedLocations, commandDescription, ctx){
+    if (msg.reply != '') {
+        await ctx.reply(msg.reply);
+        return;
+    }
+    await ctx.reply(`Buscando ${commandDescription} para as localidades ${requestedLocations}...`);
+    redeMetApi.getMet(command, requestedLocations, '').then(res => {
+        ctx.reply(res);
+    });
+}
+
 async function executeCommand(command, ctx) {
-    var requestedLocations;
+    var commandDescription;
+    var returnMessage = handleCommandMessage(ctx.update.message.text);
+    var requestedLocations = returnMessage.handledLocations;
     switch (command.toUpperCase()) {
-        case botCommands.commands.notam.toUpperCase():
-        case botCommands.commands.metar.toUpperCase():
-        case botCommands.commands.taf.toUpperCase():
-            let returnMessage = handleCommandMessage(ctx.update.message.text);
-            requestedLocations = returnMessage.handledLocations;
-            if (returnMessage.reply != '') {
-                await ctx.reply(returnMessage.reply);
-                return;
-            }
-            await ctx.reply(`Buscando ${command.toUpperCase()} para as localidades ${requestedLocations}...`);
-            redeMetApi.getMetarOrTaf(command, requestedLocations, '').then(res => {
-                ctx.reply(res);
-            });
+        case botCommands.commands.notam.command.toUpperCase():
+            commandDescription = botCommands.commands.notam.desc;
+            requestMetData(returnMessage, command, requestedLocations, commandDescription, ctx)
             break;
-        case botCommands.commands.sigwx.toUpperCase():
-            await ctx.reply(`Buscando ${command.toUpperCase()} mais recente...`);
+        case botCommands.commands.metar.command.toUpperCase():
+            commandDescription = botCommands.commands.metar.desc;
+            requestMetData(returnMessage, command, requestedLocations, commandDescription, ctx)
+            break;
+        case botCommands.commands.aviso.command.toUpperCase():
+            commandDescription = botCommands.commands.aviso.desc;
+            requestMetData(returnMessage, command, requestedLocations, commandDescription, ctx)
+            break;
+        case botCommands.commands.taf.command.toUpperCase():
+            commandDescription = botCommands.commands.taf.desc;
+            requestMetData(returnMessage, command, requestedLocations, commandDescription, ctx)
+            break;
+        case botCommands.commands.sigwx.command.toUpperCase():
+            commandDescription = botCommands.commands.sigwx.desc;
+            await ctx.reply(`Buscando ${commandDescription} mais recente...`);
             redeMetApi.getSigwx().then(res => {
                 console.log(res);
                 ctx.replyWithPhoto(res);
@@ -79,17 +102,17 @@ async function executeCommand(command, ctx) {
                 catchErrors(error, errorMsg.redeMet);
             });
             break;
-        case botCommands.commands.allInfo.toUpperCase():
+
+        case botCommands.commands.allInfo.command.toUpperCase():
             requestedLocations = handleLocations(ctx.update.message.text);
             await ctx.reply(`Buscando informações meteorológicas para as localidades ${requestedLocations}`)
             let chainedMessage = ''
-            redeMetApi.getMetarOrTaf(botCommands.commands.metar, requestedLocations, chainedMessage).then(res => {
+            redeMetApi.getMet(botCommands.commands.metar.command, requestedLocations, chainedMessage).then(res => {
                 chainedMessage = res;
-                redeMetApi.getMetarOrTaf(botCommands.commands.taf, requestedLocations, chainedMessage).then(res => {
+                redeMetApi.getMet(botCommands.commands.taf.command, requestedLocations, chainedMessage).then(res => {
                     chainedMessage = res;
-                    redeMetApi.getAviso(requestedLocations, chainedMessage).then(res => {
+                    redeMetApi.getMet(botCommands.commands.aviso.command, requestedLocations, chainedMessage).then(res => {
                         chainedMessage = res
-                        console.log('retorna getAviso'+res);
                         ctx.reply(chainedMessage);
                     }).catch(error => {
                         catchErrors(error, errorMsg.redeMet, ctx);
@@ -100,6 +123,9 @@ async function executeCommand(command, ctx) {
             }).catch(error => {
                 catchErrors(error, errorMsg.redeMet, ctx);
             });
+
+        case botCommands.commands.sol.command.toUpperCase():
+            //requestedLocations = returnMessage.handledLocations;
 
         default:
             break;
@@ -129,12 +155,12 @@ function handleCommandMessage(message) {
 function isCommand(text) {
     for (const command in botCommands.commands) {
         if (Object.hasOwnProperty.call(botCommands.commands, command)) {
-            let commandText = botCommands.commands[command];
+            let commandText = botCommands.commands[command].command;
             let slashCommand = `/${commandText}`
             if (text.split(' ')[0] == slashCommand) { return commandText };
         }
     }
-    if (checkRequestedLocationsPattern(text)) { return botCommands.commands.allInfo }
+    if (checkRequestedLocationsPattern(text)) { return botCommands.commands.allInfo.command }
     return false;
 }
 
