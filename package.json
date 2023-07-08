@@ -12,7 +12,8 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^0.27.2",
-    "telegraf": "^3.38.0"
+    "telegraf": "^3.38.0",
+    "xml-js": "^1.6.11"
   },
   "engines": {
     "node": "16.15.1"
