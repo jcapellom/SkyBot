@@ -1,4 +1,4 @@
-const env = require('./.env');
+const env = require('../.env');
 const redeMetApi = require('../API/redeMetApi');
 const util = require('../util');
 const botCommands = require('./botCommands');
