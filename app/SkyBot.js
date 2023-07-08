@@ -40,7 +40,7 @@ bot.help(ctx => {
             }   
         }
     }
-    textHelp += '\n*icao1,icao2,icao3\\.\\.\\.* Você pode listar localidades sem comando precedente\\. Isso retornará METAR e TAF das localidades listadas separadas por vírgula e sem espaço\\.\n'
+    textHelp += '\n*icao1,icao2,icao3\\.\\.\\.* Você pode listar localidades sem comando precedente\\. Isso retornará METAR, TAF e aviso de aeródromo das localidades listadas separadas por vírgula e sem espaço\\.\n'
     ctx.telegram.sendMessage(ctx.chat.id, textHelp, { parse_mode: 'MarkdownV2' });
 });
 
