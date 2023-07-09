@@ -1,5 +1,6 @@
 const env = require('../.env');
 const redeMetApi = require('../API/redeMetApi');
+const aisWebApi = require('../API/aisWebApi');
 const util = require('../util');
 const botCommands = require('./botCommands');
 const Telegraf = require('telegraf');
@@ -105,7 +106,7 @@ async function executeCommand(command, ctx) {
 
         case botCommands.commands.allInfo.command.toUpperCase():
             requestedLocations = handleLocations(ctx.update.message.text);
-            await ctx.reply(`Buscando informações meteorológicas para as localidades ${requestedLocations}`)
+            await ctx.reply(`Buscando informações meteorológicas para as localidades ${requestedLocations}...`)
             let chainedMessage = ''
             redeMetApi.getMet(botCommands.commands.metar.command, requestedLocations, chainedMessage).then(res => {
                 chainedMessage = res;
@@ -125,8 +126,18 @@ async function executeCommand(command, ctx) {
             });
 
         case botCommands.commands.sol.command.toUpperCase():
-            //requestedLocations = returnMessage.handledLocations;
-
+            commandDescription = botCommands.commands.sol.desc;
+            if (requestedLocations== undefined || requestedLocations.length > 1) {
+                ctx.reply('Digite o código ICAO de uma localidade (apenas uma). Utilize /help para instruções.')
+                break;
+            }
+            await ctx.reply(`Buscando horários da tabela do pôr do sol para ${requestedLocations}...`)
+            aisWebApi.getSol(requestedLocations).then(res => {
+                console.log(res);
+                ctx.reply(`${res.aisweb.day.aero._text} (${res.aisweb.day.date._text}) \n \u{1F31E} ${res.aisweb.day.sunrise._text} \n \u{1F319} ${res.aisweb.day.sunset._text}`);
+            }).catch(error => {
+                catchErrors(error, errorMsg.aisWeb);
+            });
         default:
             break;
     }
