@@ -124,7 +124,7 @@ async function executeCommand(command, ctx) {
             }).catch(error => {
                 catchErrors(error, errorMsg.redeMet, ctx);
             });
-
+            break;
         case botCommands.commands.sol.command.toUpperCase():
             commandDescription = botCommands.commands.sol.desc;
             if (requestedLocations== undefined || requestedLocations.length > 1) {
@@ -138,6 +138,7 @@ async function executeCommand(command, ctx) {
             }).catch(error => {
                 catchErrors(error, errorMsg.aisWeb);
             });
+            break;
         default:
             break;
     }
