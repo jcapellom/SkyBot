@@ -30,8 +30,9 @@ function getMet(met, requestedLocations, finalMessage) {
             }
             else
                 response.forEach((item) => {
-                    returnedMessages.push({ location: item.id_localidade, initial: item.validade_inicial, final: item.validade_final, msg: item.mens, received: item.recebimento });
-                    foundLocations.push(item.id_localidade);
+                    let localidade = item.id_localidade !== undefined ? item.id_localidade: item.id_fir
+                    returnedMessages.push({ location: localidade, initial: item.validade_inicial, final: item.validade_final, msg: item.mens, received: item.recebimento });
+                    foundLocations.push(localidade);
                 });
             let notFoundLocations = util.arrayDifference(requestedLocations, foundLocations);
             returnedMessages.forEach(item => finalMessage += (item.msg + '\n\n'));
