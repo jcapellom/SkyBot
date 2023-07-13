@@ -169,7 +169,7 @@ function isCommand(text) {
         if (Object.hasOwnProperty.call(botCommands.commands, command)) {
             let commandText = botCommands.commands[command].command;
             let slashCommand = `/${commandText}`
-            if (text.split(' ')[0] == slashCommand) { return commandText };
+            if (text.split(' ')[0].toLowerCase() == slashCommand) { return commandText };
         }
     }
     if (checkRequestedLocationsPattern(text)) { return botCommands.commands.allInfo.command }
