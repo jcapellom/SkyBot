@@ -24,17 +24,23 @@ function getMet(met, requestedLocations, finalMessage) {
             response = res.data !== undefined ? res.data.data !== undefined ? res.data.data.data : 0 : 0;
             let returnedMessages = [];
             let foundLocations = [];
+            let notFoundLocations = []
             if (response == 0) {
                 finalMessage += `Não há ${botCommands.commands[met].desc} válido para nenhuma localidade requisitada.\n\n`;
                 resolve(finalMessage);
             }
             else
                 response.forEach((item) => {
-                    let localidade = item.id_localidade !== undefined ? item.id_localidade: item.id_fir
-                    returnedMessages.push({ location: localidade, initial: item.validade_inicial, final: item.validade_final, msg: item.mens, received: item.recebimento });
-                    foundLocations.push(localidade);
+                    if (item.id_localidade !== undefined) {
+                        foundLocations.push(item.id_localidade);
+                    } else {
+                        util.splitAdWrngLocations(item.mens.substring(0, item.mens.indexOf(' '))).forEach(element => {
+                            foundLocations.push(element);
+                        });
+                    }
+                    returnedMessages.push({ location: foundLocations, initial: item.validade_inicial, final: item.validade_final, msg: item.mens, received: item.recebimento });
                 });
-            let notFoundLocations = util.arrayDifference(requestedLocations, foundLocations);
+            notFoundLocations.push(util.arrayDifference(requestedLocations, foundLocations));
             returnedMessages.forEach(item => finalMessage += (item.msg + '\n\n'));
             if (notFoundLocations != 0) finalMessage += `Não há ${botCommands.commands[met].desc} válido para ${notFoundLocations}\n\n`;
             resolve(finalMessage);
