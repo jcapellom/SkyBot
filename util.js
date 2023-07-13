@@ -16,7 +16,13 @@ const toISOStringWithTimezone = date => {
         ':' + pad(tzOffset % 60);
 }
 
+function splitAdWrngLocations(rawLoc) {
+    rawLoc.split('/').map(location => location.toUpperCase())
+    return rawLoc.split('/').map(location => location.toUpperCase());
+}
+
 module.exports = {
     arrayDifference,
-    toISOStringWithTimezone
+    toISOStringWithTimezone,
+    splitAdWrngLocations
 }
