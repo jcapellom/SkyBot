@@ -9,11 +9,12 @@ module.exports = {
 
     aisWebApiKey,
     aisWebApiPass,
-    getSol
+    getSol,
+    getNotam
 
 };
 
-function getSol(requestedLocations, finalMessage) {
+function getSol(requestedLocations) {
     let area = 'sol';
     let response;
     let data_ini;
@@ -23,9 +24,23 @@ function getSol(requestedLocations, finalMessage) {
         let requestUrl = `${baseUrlMensagens}${area}&icaoCode=${requestedLocations}`;
         console.log(requestUrl);
         axios.get(requestUrl).then(res => {
+            response = xml2json(res.data, { spaces: 2, compact: true });    
+            console.log(response);
+            resolve(JSON.parse(response));
+        }).catch(err => console.log(err));
+    });
+}
+
+function getNotam(requestedLocations) {
+    let area = 'notam';
+    let response;
+    return new Promise((resolve) => {
+        let requestUrl = `${baseUrlMensagens}${area}&icaoCode=${requestedLocations}`;
+        console.log(requestUrl);
+        axios.get(requestUrl).then(res => {
             response = xml2json(res.data, { spaces: 2, compact: true });
             console.log(response);
             resolve(JSON.parse(response));
-        });
+        }).catch(err => console.log(err));
     });
 }
