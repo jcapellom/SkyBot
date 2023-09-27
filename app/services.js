@@ -34,9 +34,7 @@ async function handleNotam(requestedLocations, ctx) {
       // ctx.reply(msgNotams);
     })
     .catch((error) => {
-      console.log("error", error);
       catchErrors(error, errorMsg.aisWeb, ctx);
-      throw error;
     });
 }
 
