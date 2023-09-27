@@ -111,6 +111,7 @@ function checkRequestedLocationsPattern(text) {
 function handleCommandMessage(message, command) {
   let textAfterCommand = message.split(" ")[1];
 
+  // Hack para o comando sigwx e allInfo
   if (command == "allInfo" || command == "sigwx") {
     return { reply: "", handledLocations: [] };
   }
