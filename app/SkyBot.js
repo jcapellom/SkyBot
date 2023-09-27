@@ -1,10 +1,8 @@
-const env = require("../.env");
-const redeMetApi = require("../API/redeMetApi");
-const util = require("../util");
-const { commands } = require("./botCommands");
 const Telegraf = require("telegraf");
+const env = require("../.env");
+const { handleLocations, toISOStringWithTimezone } = require("../util");
+const { commands } = require("./botCommands");
 const { handleNotam, handleSol, handleAllInfo, handleSigWx, requestMetData } = require("./services");
-const { handleLocations } = require("../util");
 
 const bot = new Telegraf(env.token);
 const botLog = new Telegraf(env.tokenLog);
@@ -59,7 +57,7 @@ bot.help((ctx) => {
 function logMessages(message) {
   let senderName = message.from.first_name;
   let senderLastName = message.from.last_name;
-  let timestamp = util.toISOStringWithTimezone(new Date(message.date * 1000));
+  let timestamp = toISOStringWithTimezone(new Date(message.date * 1000));
   let loggedMsg = `------------------------------------\n\
 ${senderName} ${senderLastName} - ${timestamp}\n\
 -> ${message.text}\n\
