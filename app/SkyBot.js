@@ -5,6 +5,7 @@ const util = require("../util");
 const botCommands = require("./botCommands");
 const Telegraf = require("telegraf");
 const errorMsg = require("./errorMsgs");
+const { handleNotam, handleSol } = require("./services");
 
 const bot = new Telegraf(env.token);
 const botLog = new Telegraf(env.tokenLog);
@@ -27,7 +28,7 @@ bot.start((ctx) => {
 
 bot.on("message", async (ctx, next) => {
   // await next();
-  console.log(ctx.update);
+  // console.log(ctx.update);
 
   const { text } = ctx.update.message;
 
@@ -113,16 +114,6 @@ async function executeCommand(command, ctx) {
   let requestedLocations = returnMessage.handledLocations;
 
   switch (command.toUpperCase()) {
-    case botCommands.commands.notam.command.toUpperCase():
-      commandDescription = botCommands.commands.notam.desc;
-      requestMetData(
-        returnMessage,
-        command,
-        requestedLocations,
-        commandDescription,
-        ctx
-      );
-      break;
     case botCommands.commands.metar.command.toUpperCase():
       commandDescription = botCommands.commands.metar.desc;
       requestMetData(
@@ -215,50 +206,10 @@ async function executeCommand(command, ctx) {
       break;
 
     case botCommands.commands.sol.command.toUpperCase():
-      commandDescription = botCommands.commands.sol.desc;
-      if (requestedLocations == undefined || requestedLocations.length > 1) {
-        ctx.reply(
-          "Digite o código ICAO de uma localidade (apenas uma). Utilize /help para instruções."
-        );
-        break;
-      }
-      await ctx.reply(
-        `Buscando horários da tabela do pôr do sol para ${requestedLocations}...`
-      );
-      aisWebApi
-        .getSol(requestedLocations)
-        .then((res) => {
-          console.log(res);
-          ctx.reply(
-            `${res.aisweb.day.aero._text} (${res.aisweb.day.date._text}) \n \u{1F31E} ${res.aisweb.day.sunrise._text} \n \u{1F319} ${res.aisweb.day.sunset._text}`
-          );
-        })
-        .catch((error) => {
-          catchErrors(error, errorMsg.aisWeb);
-        });
+      handleSol(requestedLocations, ctx);
       break;
     case botCommands.commands.notam.command.toUpperCase():
-      commandDescription = botCommands.commands.notam.desc;
-      if (requestedLocations == undefined || requestedLocations.length > 1) {
-        ctx.reply(
-          "Digite o código ICAO de uma localidade (apenas uma). Utilize /help para instruções."
-        );
-        break;
-      }
-      await ctx.reply(`Buscando NOTAMs para ${requestedLocations}...`);
-      aisWebApi
-        .getNotam(requestedLocations)
-        .then((res) => {
-          console.log(res);
-          let msgNotams = "";
-          res.aisweb.notam.item.forEach((notam) => {
-            msgNotams += `${notam.loc._text}, ${notam.cidade._text}, ${notam.uf._text}\n${notam.fir._text}/${notam.cod._text}/${notam.traffic._text}/${notam.purpose._text} /${notam.scope._text} /${notam.lower._text}/${notam.upper._text}/${notam.geo._text} \n${notam.e._text} \nORIGEM: ${notam.origem._text} \n\u{2B07}${notam.f._text} \u{2B06}${notam.g._text}\n\n`;
-          });
-          ctx.reply(msgNotams);
-        })
-        .catch((error) => {
-          catchErrors(error, errorMsg.aisWeb, ctx);
-        });
+      handleNotam(requestedLocations, ctx);
       break;
     default:
       break;

@@ -12,7 +12,8 @@
   "license": "ISC",
   "dependencies": {
     "telegraf": "^3.38.0",
-    "xml-js": "^1.6.11"
+    "xml-js": "^1.6.11",
+    "xml2js": "^0.6.2"
   },
   "engines": {
     "node": "16.15.1"
