@@ -95,15 +95,13 @@ async function requestMetData(
   );
 
   redeMetApi.getMet(command, requestedLocations).then(async (data) => {
-    if (!data) {
-      await ctx.reply(
-        `Não há ${botCommands.commands[met].desc} válido para ${notFoundLocations}\n\n`
-      );
-      return false;
-    }
-    for (aero in data) {
-      if (data[aero].mens != undefined) {
-        await ctx.reply(data[aero].mens);
+    for (aero of data) {
+      if (aero.mens) {
+        await ctx.reply(aero.mens);
+      } else {
+        await ctx.reply(
+          `Não há ${botCommands.commands[command].desc} válido para ${aero.id_localidade}\n\n`
+        );
       }
     }
   });
