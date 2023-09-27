@@ -1,5 +1,3 @@
-const util = require("../util");
-const xml2json = require("../node_modules/xml-js/lib/xml2json");
 var xml2js = require('xml2js');
 
 const aisWebApiKey = "2074992786";
@@ -15,11 +13,6 @@ module.exports = {
 
 function getSol(requestedLocations) {
   let area = "sol";
-  let response;
-  let data_ini;
-  let data_fim;
-  let returnMessage;
-
   let requestUrl = `${baseUrlMensagens}${area}&icaoCode=${requestedLocations}`;
 
   return fetch(requestUrl)
@@ -32,10 +25,7 @@ function getSol(requestedLocations) {
 }
 
 function getNotam(requestedLocations) {
-  console.log("getNotam", requestedLocations);
-
   let area = "notam";
-  let response;
   let requestUrl = `${baseUrlMensagens}${area}&icaoCode=${requestedLocations}`;
 
   return fetch(requestUrl)
