@@ -1,8 +1,7 @@
 const env = require("../.env");
 const redeMetApi = require("../API/redeMetApi");
-const aisWebApi = require("../API/aisWebApi");
 const util = require("../util");
-const botCommands = require("./botCommands");
+const { commands } = require("./botCommands");
 const Telegraf = require("telegraf");
 const errorMsg = require("./errorMsgs");
 const { handleNotam, handleSol, handleAllInfo } = require("./services");
@@ -43,13 +42,13 @@ bot.on("message", async (ctx, next) => {
 
 bot.help((ctx) => {
   let textHelp = "";
-  for (const command in botCommands.commands) {
-    if (Object.hasOwnProperty.call(botCommands.commands, command)) {
-      if (botCommands.commands[command].hint != "") {
+  for (const command in commands) {
+    if (Object.hasOwnProperty.call(commands, command)) {
+      if (commands[command].hint != "") {
         if (textHelp != "") {
           textHelp += "\n";
         }
-        textHelp += botCommands.commands[command].hint;
+        textHelp += commands[command].hint;
       }
     }
   }
@@ -97,8 +96,7 @@ async function executeCommand(command, ctx) {
   }
   const requestedLocations = returnMessage.handledLocations;
 
-  const { metar, aviso, taf, sigwx, allInfo, sol, notam } =
-    botCommands.commands;
+  const { metar, aviso, taf, sigwx, allInfo, sol, notam } = commands;
 
   switch (command.toUpperCase()) {
     case metar.command.toUpperCase():
@@ -160,7 +158,7 @@ function handleCommandMessage(message, command) {
 }
 
 function isCommand(text) {
-  for (const [_key, command] of Object.entries(botCommands.commands)) {
+  for (const [_key, command] of Object.entries(commands)) {
     let commandText = command.command;
     let slashCommand = `/${commandText}`;
 
@@ -169,7 +167,7 @@ function isCommand(text) {
     }
   }
   if (checkRequestedLocationsPattern(text)) {
-    return botCommands.commands.allInfo.command;
+    return commands.allInfo.command;
   }
   return false;
 }
