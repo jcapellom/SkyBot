@@ -93,16 +93,16 @@ async function requestMetData(
     `Buscando ${commandDescription} para as localidade(s) ${requestedLocations}...`
   );
 
-  redeMetApi.getMet(command, requestedLocations).then((data) => {
+  redeMetApi.getMet(command, requestedLocations).then(async (data) => {
     if (!data) {
-      ctx.reply(
+      await ctx.reply(
         `Não há ${botCommands.commands[met].desc} válido para ${notFoundLocations}\n\n`
       );
       return false;
     }
     for (aero in data) {
       if (data[aero].mens != undefined) {
-        ctx.reply(data[aero].mens);
+        await ctx.reply(data[aero].mens);
       }
     }
   });
