@@ -1,6 +1,3 @@
-const botCommands = require('../app/botCommands');
-const util = require('../util');
-
 const redeMetApiKey = 'OM55qUBbwLma4RYXBf1QDYRPkIEyQD99KJ6fs94L';
 const baseUrlMensagens = 'https://api-redemet.decea.mil.br/mensagens/';
 const baseUrlProdutos = 'https://api-redemet.decea.mil.br/produtos/';
