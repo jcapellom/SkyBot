@@ -1,5 +1,8 @@
 const aisWebApi = require("../API/aisWebApi");
-const { catchErrors } = require('../util');
+const redeMetApi = require("../API/redeMetApi");
+const errorMsg = require("./errorMsgs");
+const botCommands = require("./botCommands");
+const { catchErrors, handleLocations } = require('../util');
 
 async function handleNotam(requestedLocations, ctx) {
   if (requestedLocations == undefined || requestedLocations.length > 1) {
@@ -65,7 +68,61 @@ async function handleSol(requestedLocations, ctx) {
     });
 }
 
+async function handleAllInfo(ctx) {
+  requestedLocations = handleLocations(ctx.update.message.text);
+      
+  await ctx.reply(
+    `Buscando informações meteorológicas para as localidades ${requestedLocations}...`
+  );
+
+  try {
+    const metar = await redeMetApi.getMet(
+      botCommands.commands.metar.command,
+      requestedLocations
+    );
+    const taf = await redeMetApi.getMet(
+      botCommands.commands.taf.command,
+      requestedLocations
+    );
+    const aviso = await redeMetApi.getMet(
+      botCommands.commands.aviso.command,
+      requestedLocations
+    );
+
+    await ctx.reply(`\u{1F4A7} METAR \u{1F4A7}\n`);
+    for (aero of metar) {
+      if (aero.mens != undefined) {
+        await ctx.reply(aero.mens);
+      } else {
+        await ctx.reply(`Não há aviso de aeródromo válido para ${aero.id_localidade}`);
+      }
+    }
+
+    await ctx.reply(`\u{1F4A7} TAF \u{1F4A7}\n`);
+    for (aero of taf) {
+      if (aero.mens != undefined) {
+        await ctx.reply(aero.mens);
+      } else {
+        await ctx.reply(`Não há aviso de aeródromo válido para ${aero.id_localidade}`);
+      }
+    }
+    
+    await ctx.reply(`\u{1F4A7} AVISO DE AERÓDROMO \u{1F4A7}\n`);
+    for (aero of aviso) {
+      if (aero.mens != undefined) {
+        await ctx.reply(aero.mens);
+      } else {
+        await ctx.reply(`Não há aviso de aeródromo válido para ${aero.id_localidade}`);
+      }
+    }
+
+  } catch (error) {
+    catchErrors(error, errorMsg.redeMet, ctx);
+  }
+}
+
 module.exports = {
   handleNotam,
   handleSol,
+  handleAllInfo
 };

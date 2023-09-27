@@ -5,8 +5,8 @@ const util = require("../util");
 const botCommands = require("./botCommands");
 const Telegraf = require("telegraf");
 const errorMsg = require("./errorMsgs");
-const { handleNotam, handleSol } = require("./services");
-const { catchErrors } = require('../util');
+const { handleNotam, handleSol, handleAllInfo } = require("./services");
+const { catchErrors, handleLocations } = require('../util');
 
 const bot = new Telegraf(env.token);
 const botLog = new Telegraf(env.tokenLog);
@@ -28,9 +28,6 @@ bot.start((ctx) => {
 });
 
 bot.on("message", async (ctx, next) => {
-  // await next();
-  // console.log(ctx.update);
-
   const { text } = ctx.update.message;
 
   logMessages(ctx.update.message);
@@ -71,12 +68,6 @@ ${senderName} ${senderLastName} - ${timestamp}\n\
 ------------------------------------\n`;
 
   botLog.telegram.sendMessage(env.adminChatId, loggedMsg);
-}
-
-function handleLocations(locations) {
-  return locations !== undefined
-    ? locations.split(",").map((location) => location.toUpperCase())
-    : [];
 }
 
 async function requestMetData(
@@ -158,52 +149,8 @@ async function executeCommand(command, ctx) {
       break;
 
     case botCommands.commands.allInfo.command.toUpperCase():
-      requestedLocations = handleLocations(ctx.update.message.text);
-      await ctx.reply(
-        `Buscando informações meteorológicas para as localidades ${requestedLocations}...`
-      );
-
-      try {
-        const metar = await redeMetApi.getMet(
-          botCommands.commands.metar.command,
-          requestedLocations
-        );
-        const taf = await redeMetApi.getMet(
-          botCommands.commands.taf.command,
-          requestedLocations
-        );
-        const aviso = await redeMetApi.getMet(
-          botCommands.commands.aviso.command,
-          requestedLocations
-        );
-
-        console.log(metar);
-        console.log(taf);
-        console.log(aviso);
-
-        await ctx.reply(`\u{1F4A7} METAR \u{1F4A7}\n`);
-        for (aero in metar) {
-          if (metar[aero].mens != undefined) {
-            await ctx.reply(metar[aero].mens);
-          }
-        }
-        await ctx.reply(`\u{1F4A7} TAF \u{1F4A7}\n`);
-        for (aero in taf) {
-          if (taf[aero].mens != undefined) {
-            await ctx.reply(taf[aero].mens);
-          }
-        }
-        await ctx.reply(`\u{1F4A7} AVISO DE AERÓDROMO \u{1F4A7}\n`);
-        for (aero in aviso) {
-          if (aviso[aero].mens != undefined) {
-            await ctx.reply(aviso[aero].mens);
-          }
-        }
-      } catch (error) {
-        catchErrors(error, errorMsg.redeMet, ctx);
-      }
+      handleAllInfo(ctx);
       break;
-
     case botCommands.commands.sol.command.toUpperCase():
       handleSol(requestedLocations, ctx);
       break;
