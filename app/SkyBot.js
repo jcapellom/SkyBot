@@ -1,3 +1,4 @@
+const fs = require("fs");
 const env = require("../.env");
 const redeMetApi = require("../API/redeMetApi");
 const aisWebApi = require("../API/aisWebApi");
@@ -6,6 +7,7 @@ const botCommands = require("./botCommands");
 const Telegraf = require("telegraf");
 const errorMsg = require("./errorMsgs");
 const { handleNotam, handleSol } = require("./services");
+const { downloadAlertaRioImages } = require("./gif");
 
 const bot = new Telegraf(env.token);
 const botLog = new Telegraf(env.tokenLog);
@@ -39,6 +41,19 @@ bot.on("message", async (ctx, next) => {
   if (command) {
     executeCommand(command, ctx);
   } else {
+    /**
+     * Hack para testar geraracao de gif do radar do Alerta Rio
+     */
+    if (text.startsWith("/radar")) {
+      await ctx.reply("Gerando nova animacao do radar...");
+      await downloadAlertaRioImages();
+      await ctx.reply("Enviando animacao...");
+
+      // Send gif
+      await ctx.replyWithAnimation({ source: "./temp/result.gif", caption: "Radar Alerta Rio" });
+      return true;
+    }
+
     ctx.reply("Comando não reconhecido. Utilize /help para instruções.");
   }
 });
