@@ -3,9 +3,8 @@ const redeMetApi = require("../API/redeMetApi");
 const util = require("../util");
 const { commands } = require("./botCommands");
 const Telegraf = require("telegraf");
-const errorMsg = require("./errorMsgs");
-const { handleNotam, handleSol, handleAllInfo } = require("./services");
-const { catchErrors, handleLocations } = require("../util");
+const { handleNotam, handleSol, handleAllInfo, handleSigWx } = require("./services");
+const { handleLocations } = require("../util");
 
 const bot = new Telegraf(env.token);
 const botLog = new Telegraf(env.tokenLog);
@@ -109,15 +108,7 @@ async function executeCommand(command, ctx) {
       requestMetData(taf, requestedLocations, ctx);
       break;
     case sigwx.command.toUpperCase():
-      await ctx.reply(`Buscando ${sigwx.desc} mais recente...`);
-      await redeMetApi
-        .getSigwx()
-        .then((res) => {
-          ctx.replyWithPhoto(res);
-        })
-        .catch((error) => {
-          catchErrors(error, errorMsg.redeMet);
-        });
+      handleSigWx(sigwx, ctx);
       break;
     case allInfo.command.toUpperCase():
       handleAllInfo(ctx);

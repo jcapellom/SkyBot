@@ -122,8 +122,21 @@ async function handleAllInfo(ctx) {
   }
 }
 
+async function handleSigWx(sigwx, ctx) {
+  await ctx.reply(`Buscando ${sigwx.desc} mais recente...`);
+  return redeMetApi
+    .getSigwx()
+    .then((res) => {
+      ctx.replyWithPhoto(res);
+    })
+    .catch((error) => {
+      catchErrors(error, errorMsg.redeMet);
+    });
+}
+
 module.exports = {
   handleNotam,
   handleSol,
-  handleAllInfo
+  handleAllInfo,
+  handleSigWx
 };
