@@ -112,7 +112,8 @@ async function handleAllInfo(ctx) {
       if (aero.mens != undefined) {
         await ctx.reply(aero.mens);
       } else {
-        await ctx.reply(`Não há aviso de aeródromo válido para ${aero.id_localidade}`);
+        // O aviso nao e definido pelo id_localidade, entao nao temos certeza se existe ou nao
+        // await ctx.reply(`Não há aviso de aeródromo válido para ${aero.id_localidade}`);
       }
     }
 

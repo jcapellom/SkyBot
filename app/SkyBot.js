@@ -6,7 +6,7 @@ const botCommands = require("./botCommands");
 const Telegraf = require("telegraf");
 const errorMsg = require("./errorMsgs");
 const { handleNotam, handleSol, handleAllInfo } = require("./services");
-const { catchErrors, handleLocations } = require('../util');
+const { catchErrors, handleLocations } = require("../util");
 
 const bot = new Telegraf(env.token);
 const botLog = new Telegraf(env.tokenLog);
@@ -70,28 +70,18 @@ ${senderName} ${senderLastName} - ${timestamp}\n\
   botLog.telegram.sendMessage(env.adminChatId, loggedMsg);
 }
 
-async function requestMetData(
-  msg,
-  command,
-  requestedLocations,
-  commandDescription,
-  ctx
-) {
-  if (msg.reply != "") {
-    await ctx.reply(msg.reply);
-    return;
-  }
+async function requestMetData(command, requestedLocations, ctx) {
   await ctx.reply(
-    `Buscando ${commandDescription} para as localidade(s) ${requestedLocations}...`
+    `Buscando ${command.desc} para as localidade(s) ${requestedLocations}...`
   );
 
-  redeMetApi.getMet(command, requestedLocations).then(async (data) => {
+  redeMetApi.getMet(command.command, requestedLocations).then(async (data) => {
     for (aero of data) {
       if (aero.mens) {
         await ctx.reply(aero.mens);
       } else {
         await ctx.reply(
-          `Não há ${botCommands.commands[command].desc} válido para ${aero.id_localidade}\n\n`
+          `Não há ${command.desc} válido para ${aero.id_localidade}\n\n`
         );
       }
     }
@@ -99,62 +89,45 @@ async function requestMetData(
 }
 
 async function executeCommand(command, ctx) {
-  let commandDescription;
-  let returnMessage = handleCommandMessage(ctx.update.message.text);
-  let requestedLocations = returnMessage.handledLocations;
+  const returnMessage = handleCommandMessage(ctx.update.message.text, command);
+  // Se tem reply, é porque houve erro
+  if (returnMessage.reply != "") {
+    await ctx.reply(returnMessage.reply);
+    return;
+  }
+  const requestedLocations = returnMessage.handledLocations;
+
+  const { metar, aviso, taf, sigwx, allInfo, sol, notam } =
+    botCommands.commands;
 
   switch (command.toUpperCase()) {
-    case botCommands.commands.metar.command.toUpperCase():
-      commandDescription = botCommands.commands.metar.desc;
-      requestMetData(
-        returnMessage,
-        command,
-        requestedLocations,
-        commandDescription,
-        ctx
-      );
+    case metar.command.toUpperCase():
+      requestMetData(metar, requestedLocations, ctx);
       break;
-    case botCommands.commands.aviso.command.toUpperCase():
-      commandDescription = botCommands.commands.aviso.desc;
-      requestMetData(
-        returnMessage,
-        command,
-        requestedLocations,
-        commandDescription,
-        ctx
-      );
+    case aviso.command.toUpperCase():
+      requestMetData(aviso, requestedLocations, ctx);
       break;
-    case botCommands.commands.taf.command.toUpperCase():
-      commandDescription = botCommands.commands.taf.desc;
-      requestMetData(
-        returnMessage,
-        command,
-        requestedLocations,
-        commandDescription,
-        ctx
-      );
+    case taf.command.toUpperCase():
+      requestMetData(taf, requestedLocations, ctx);
       break;
-    case botCommands.commands.sigwx.command.toUpperCase():
-      commandDescription = botCommands.commands.sigwx.desc;
-      await ctx.reply(`Buscando ${commandDescription} mais recente...`);
-      redeMetApi
+    case sigwx.command.toUpperCase():
+      await ctx.reply(`Buscando ${sigwx.desc} mais recente...`);
+      await redeMetApi
         .getSigwx()
         .then((res) => {
-          console.log(res);
           ctx.replyWithPhoto(res);
         })
         .catch((error) => {
           catchErrors(error, errorMsg.redeMet);
         });
       break;
-
-    case botCommands.commands.allInfo.command.toUpperCase():
+    case allInfo.command.toUpperCase():
       handleAllInfo(ctx);
       break;
-    case botCommands.commands.sol.command.toUpperCase():
+    case sol.command.toUpperCase():
       handleSol(requestedLocations, ctx);
       break;
-    case botCommands.commands.notam.command.toUpperCase():
+    case notam.command.toUpperCase():
       handleNotam(requestedLocations, ctx);
       break;
     default:
@@ -166,8 +139,12 @@ function checkRequestedLocationsPattern(text) {
   return /^[a-z]{4}(,[a-z]{4})*$/gi.test(text);
 }
 
-function handleCommandMessage(message) {
+function handleCommandMessage(message, command) {
   let textAfterCommand = message.split(" ")[1];
+
+  if (command == "allInfo" || command == "sigwx") {
+    return { reply: "", handledLocations: [] };
+  }
 
   if (textAfterCommand === undefined) {
     return { reply: "Solicite pelo menos uma localidade" };
@@ -183,8 +160,8 @@ function handleCommandMessage(message) {
 }
 
 function isCommand(text) {
-  for (const command in botCommands.commands) {
-    let commandText = botCommands.commands[command].command;
+  for (const [_key, command] of Object.entries(botCommands.commands)) {
+    let commandText = command.command;
     let slashCommand = `/${commandText}`;
 
     if (text.split(" ")[0].toLowerCase() == slashCommand) {
