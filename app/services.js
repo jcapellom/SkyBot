@@ -1,4 +1,5 @@
 const aisWebApi = require("../API/aisWebApi");
+const { catchErrors } = require('../util');
 
 async function handleNotam(requestedLocations, ctx) {
   if (requestedLocations == undefined || requestedLocations.length > 1) {

@@ -6,6 +6,7 @@ const botCommands = require("./botCommands");
 const Telegraf = require("telegraf");
 const errorMsg = require("./errorMsgs");
 const { handleNotam, handleSol } = require("./services");
+const { catchErrors } = require('../util');
 
 const bot = new Telegraf(env.token);
 const botLog = new Telegraf(env.tokenLog);
@@ -214,13 +215,6 @@ async function executeCommand(command, ctx) {
     default:
       break;
   }
-}
-
-function catchErrors(error, msg, ctx) {
-  if (ctx) {
-    ctx.reply(msg);
-  }
-  console.log("ops!", error);
 }
 
 function checkRequestedLocationsPattern(text) {

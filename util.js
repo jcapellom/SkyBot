@@ -21,8 +21,16 @@ function splitAdWrngLocations(rawLoc) {
     return rawLoc.split('/').map(location => location.toUpperCase());
 }
 
+function catchErrors(error, msg, ctx) {
+    if (ctx) {
+      ctx.reply(msg);
+    }
+    console.log("ops!", error);
+  }
+
 module.exports = {
     arrayDifference,
     toISOStringWithTimezone,
-    splitAdWrngLocations
+    splitAdWrngLocations,
+    catchErrors
 }
