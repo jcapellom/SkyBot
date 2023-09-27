@@ -134,9 +134,28 @@ async function handleSigWx(sigwx, ctx) {
     });
 }
 
+async function requestMetData(command, requestedLocations, ctx) {
+  await ctx.reply(
+    `Buscando ${command.desc} para as localidade(s) ${requestedLocations}...`
+  );
+
+  redeMetApi.getMet(command.command, requestedLocations).then(async (data) => {
+    for (aero of data) {
+      if (aero.mens) {
+        await ctx.reply(aero.mens);
+      } else {
+        await ctx.reply(
+          `Não há ${command.desc} válido para ${aero.id_localidade}\n\n`
+        );
+      }
+    }
+  });
+}
+
 module.exports = {
   handleNotam,
   handleSol,
   handleAllInfo,
-  handleSigWx
+  handleSigWx,
+  requestMetData
 };
