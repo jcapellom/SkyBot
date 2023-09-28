@@ -110,10 +110,11 @@ async function handleAllInfo(ctx) {
     await ctx.reply(`\u{1F4A7} AVISO DE AERÓDROMO \u{1F4A7}\n`);
     for (aero of aviso) {
       if (aero.mens != undefined) {
+        var messageDelivered = true
         await ctx.reply(aero.mens);
-      } else {
+      } else if (!messageDelivered) {
         // O aviso nao e definido pelo id_localidade, entao nao temos certeza se existe ou nao
-        // await ctx.reply(`Não há AVISO de aeródromo válido para ${aero.id_localidade}`);
+        await ctx.reply(`Não há AVISO de aeródromo válido para ${aero.id_localidade}`);
       }
     }
 
